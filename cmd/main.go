@@ -45,7 +45,7 @@ func main() {
 	handler := api.NewHandler(apiKey)
 
 	// Routes
-	r.Get("/generate-test-case", handler.GenerateTestCases)
+	r.Post("/generate-test-cases", handler.GenerateTestCases)
 
 	// Start server
 	port := 5001

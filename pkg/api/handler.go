@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"gemini-ai/pkg/models"
 )
@@ -24,13 +25,52 @@ func NewHandler(apiKey string) *Handler {
 }
 
 func (h *Handler) GenerateTestCases(w http.ResponseWriter, r *http.Request) {
-	// Create default request for test case generation
+	// Parse the request body to get feature details
+	var featureRequest struct {
+		FeatureName string `json:"featureName"`
+		Description string `json:"description"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&featureRequest); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Create a structured prompt for test case generation
+	prompt := `As a QA Engineer, I need comprehensive test scenarios for the following feature:
+
+Feature: ${featureName}
+Description: ${description}
+
+Please generate detailed test scenarios covering:
+1. Positive test cases (Happy paths)
+2. Negative test cases (Error handling)
+3. Validation test cases
+4. Edge cases
+5. Security considerations
+6. Performance aspects
+
+Format the scenarios in a table with the following columns:
+| Scenario ID | Description | Test Data/Steps | Expected Result |
+
+Note: 
+- Scenario IDs should follow the format: SC-{FEATURE}-{NUMBER}
+- Include specific test data and validation criteria
+- Consider different user roles if applicable
+- Include boundary conditions
+- Consider integration points with other features`
+
+	// Replace placeholders with actual values
+	prompt = strings.ReplaceAll(prompt, "${featureName}", featureRequest.FeatureName)
+	prompt = strings.ReplaceAll(prompt, "${description}", featureRequest.Description)
+
+	// Create Gemini request
 	req := models.GeminiRequest{
 		Contents: []models.Content{
 			{
 				Parts: []models.Part{
 					{
-						Text: "I am QA tester, I want you to generate test scenarios from following done items from developer: - Implement Login functionality",
+						Text: prompt,
 					},
 				},
 			},
