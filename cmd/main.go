@@ -48,8 +48,11 @@ func main() {
 	r.Post("/generate-test-cases", handler.GenerateTestCases)
 
 	// Start server
-	port := 5001
-	addr := fmt.Sprintf(":%d", port)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "5001" // default port for local development
+	}
+	addr := fmt.Sprintf(":%s", port)
 	log.Printf("Server starting on http://localhost%s", addr)
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatal(err)
